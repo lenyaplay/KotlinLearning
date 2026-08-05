@@ -1,26 +1,25 @@
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonDecoder
 import org.example.BracketsValidator
-import kotlin.test.Test
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.DynamicTest.dynamicTest
+import org.junit.jupiter.api.TestFactory
 import kotlin.test.assertEquals
 
 class BracketTest {
-    fun readJson(): String {
+    private fun readJson(): String {
         val inputStream = this::class.java.classLoader.getResourceAsStream("bracket_test_cases.json")
-        val bufferedReader = inputStream?.bufferedReader();
-        return bufferedReader?.use { it.readText() } ?: error("Could not read BracketTestCase file");
+        val bufferedReader = inputStream?.bufferedReader()
+        return bufferedReader?.use { it.readText() } ?: error("Could not read BracketTestCase file")
     }
 
-    @Test
-    fun `test parsing`() {
-        val json = readJson();
-        val testCases = Json.decodeFromString<List<BracketTestCase>>(json);
-        testCases.forEach { testCase ->
-            assertEquals(
-                testCase.expected,
-                BracketsValidator.isValid(testCase.input),
-                "${testCase.id} ${testCase.input}"
-            );
+    private fun loadTestCases(): List<BracketTestCase> = Json.decodeFromString(readJson())
+
+    @TestFactory
+    fun `валидатор проверяет скобочные последовательности`(): List<DynamicTest> =
+        loadTestCases().map { testCase ->
+            // каждый кейс — отдельный тест, чтобы падение одного не скрывало остальные
+            dynamicTest("#${testCase.id} \"${testCase.input}\" — ${testCase.comment}") {
+                assertEquals(testCase.expected, BracketsValidator.isValid(testCase.input))
+            }
         }
-    }
 }
