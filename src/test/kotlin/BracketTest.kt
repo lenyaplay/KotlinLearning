@@ -15,7 +15,7 @@ class BracketTest {
     private fun loadTestCases(): List<BracketTestCase> = Json.decodeFromString(readJson())
 
     @TestFactory
-    fun `валидатор проверяет скобочные последовательности`(): List<DynamicTest> =
+    fun `validates bracket sequences from json cases`(): List<DynamicTest> =
         loadTestCases().map { testCase ->
             // каждый кейс — отдельный тест, чтобы падение одного не скрывало остальные
             dynamicTest("#${testCase.id} \"${testCase.input}\" — ${testCase.comment}") {
