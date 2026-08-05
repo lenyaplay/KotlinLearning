@@ -1,6 +1,6 @@
-package org.example
+package org.example.brackets_validator
 
-class BracketsValidator {
+class BracketsValidatorKotlin {
     companion object {
         private val pairs = mapOf('(' to ')', '[' to ']', '{' to '}')
         private val closers = pairs.values.toSet()

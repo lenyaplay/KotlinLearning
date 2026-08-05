@@ -1,3 +1,5 @@
+package org.example.brackets_validator
+
 import kotlinx.serialization.Serializable
 
 @Serializable
