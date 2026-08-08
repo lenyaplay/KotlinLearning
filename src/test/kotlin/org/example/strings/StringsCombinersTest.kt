@@ -1,9 +1,9 @@
-package org.example.strings_combiner
+package org.example.strings
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class StringsCombinerTest {
+class StringsCombinersTest {
     @Test
     fun `kotlin combineTwoStrings concatenates strings`() {
         assertEquals("foobar", combineTwoStrings("foo", "bar"))
@@ -15,8 +15,8 @@ class StringsCombinerTest {
         assertEquals("foo", combineTwoStrings("foo", null))
         assertEquals("", combineTwoStrings(null, null))
 
-        assertEquals("ab", combineTwoStrings("a", "b")) // порядок аргументов сохраняется
-        assertEquals("foo  bar", combineTwoStrings("foo ", " bar")) // пробелы не обрезаются
+        assertEquals("ab", combineTwoStrings("a", "b"))
+        assertEquals("foo  bar", combineTwoStrings("foo ", " bar"))
     }
 
     @Test

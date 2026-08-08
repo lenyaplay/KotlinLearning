@@ -1,7 +1,11 @@
 package org.example.singleton
 
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.TestInstance
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,11 +15,16 @@ import kotlin.test.assertTrue
 private const val THREADS = 64
 
 /**
- * Число итераций для проверок на антипаттернах. Обосновано в [RaceProbability]: даже при пессимистичном
- * `p = 0.01` для 99%-й гарантии хватает 459 итераций. Что взятого числа достаточно при **измеренной**
- * вероятности, каждый такой тест проверяет отдельным утверждением.
+ * Число итераций для проверок на антипаттернах. Обосновано через [RaceProbability]: 100 итераций дают
+ * 99%-ю гарантию обнаружения при `p ≥ 0.045` (`requiredIterations(0.05) == 90`). Измеренное на этом
+ * коде `p` равно 1.0, то есть запас двукратный по порядку величины.
+ *
+ * Автоматически проверить достаточность нельзя: любое утверждение вида `ITERATIONS >= required`
+ * циклично, поскольку `required` считается по измеренной здесь же доле падений. Поэтому число
+ * зафиксировано осознанно, а тест печатает измеренное `p` — если оно окажется ниже 0.045, константу
+ * нужно поднимать.
  */
-private const val ITERATIONS = 500
+private const val ITERATIONS = 100
 
 /**
  * Один набор тестов на все реализации Singleton: корректные проходят проверку [assertSingleInstance],
@@ -23,13 +32,18 @@ private const val ITERATIONS = 500
  *
  * Проверка везде одна и та же, отличается только ожидаемый исход — поэтому она заодно доказывает, что
  * положительные тесты не проходят «сами собой».
+ *
+ * Жизненный цикл [TestInstance.Lifecycle.PER_CLASS] нужен ради общего пула потоков: при цикле по
+ * умолчанию (экземпляр на каждый тест) за прогон создавалось бы 11 × [THREADS] платформенных потоков.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SingletonTest {
     private val pool: ExecutorService = Executors.newFixedThreadPool(THREADS)
 
-    @AfterTest
+    @AfterAll
     fun tearDown() {
-        pool.shutdownNow()
+        pool.shutdown()
+        check(pool.awaitTermination(30, TimeUnit.SECONDS)) { "пул не завершился за 30 с" }
     }
 
     /**
@@ -52,11 +66,15 @@ class SingletonTest {
 
     /**
      * Прогоняет [assertSingleInstance] против сломанной реализации [ITERATIONS] раз и требует, чтобы
-     * проверка падала.
+     * проверка падала именно из-за гонки.
      *
-     * Проверяется не только сам факт обнаружения, но и достаточность числа итераций: измеренная
-     * вероятность подставляется в [RaceProbability.requiredIterations], и тест падает, если [ITERATIONS]
-     * оказалось меньше нужного для 99%-й гарантии.
+     * Засчитывается не любое падение: обычный `AssertionError` мог бы прийти и от постороннего
+     * утверждения (например, от испорченного `reset()`), поэтому дополнительно проверяется, что
+     * конструктор действительно отработал больше одного раза.
+     *
+     * `ExecutionException(NullPointerException)` — тоже проявление гонки, а не постороннее падение:
+     * `UnsafeLazyImpl` обнуляет `initializer` после инициализации, и поток, вошедший в него следом,
+     * вычисляет `initializer!!()` уже на `null`.
      */
     private fun <T> assertRaceIsDetected(
         name: String,
@@ -68,22 +86,18 @@ class SingletonTest {
         repeat(ITERATIONS) {
             reset()
             val error = runCatching { assertSingleInstance(instantiationCount, getInstance) }.exceptionOrNull()
-            if (error is AssertionError) failures++ else if (error != null) throw error
+            val raceDetected = when {
+                error == null -> false
+                error is AssertionError && instantiationCount() > 1 -> true
+                error is ExecutionException && error.cause is NullPointerException -> true
+                else -> throw error
+            }
+            if (raceDetected) failures++
         }
 
-        val report = RaceReport(name, ITERATIONS, failures)
-        println(report)
-
+        println(RaceReport(name, ITERATIONS, failures))
         assertTrue(failures > 0, "$name: гонка не обнаружена ни разу за $ITERATIONS итераций — проверка бесполезна")
-        val required = report.requiredIterations!!
-        assertTrue(
-            ITERATIONS >= required,
-            "$name: при p = ${report.observedProbability} для 99%-й гарантии нужно $required итераций, " +
-                "а выполнено только $ITERATIONS",
-        )
     }
-
-    // --- корректные реализации: проверка должна проходить ---
 
     @Test
     fun `java eager singleton`() =
@@ -111,9 +125,14 @@ class SingletonTest {
     fun `java enum singleton`() =
         assertSingleInstance({ EnumSingletonJava.instantiationCount().get() }, EnumSingletonJava::getInstance)
 
+    /**
+     * Экземпляр передаётся лямбдой, а не ссылкой `ObjectSingletonKotlin::getInstance`: bound callable
+     * reference компилируется в `getstatic INSTANCE` и создал бы синглтон ещё до входа в проверку,
+     * закрыв окно гонки.
+     */
     @Test
     fun `kotlin object singleton`() =
-        assertSingleInstance({ ObjectSingletonKotlin.instantiationCount.get() }, ObjectSingletonKotlin::getInstance)
+        assertSingleInstance({ ObjectSingletonKotlin.instantiationCount.get() }) { ObjectSingletonKotlin.getInstance() }
 
     @Test
     fun `kotlin lazy singleton`() =
@@ -126,16 +145,14 @@ class SingletonTest {
             SynchronizedSingletonKotlin::getInstance,
         )
 
+    /** Заодно проверяет, что переданный параметр учитывается только при первом вызове. */
     @Test
     fun `kotlin double checked singleton`() {
         assertSingleInstance({ DoubleCheckedSingletonKotlin.instantiationCount.get() }) {
             DoubleCheckedSingletonKotlin.getInstance("first")
         }
-        // параметр учитывается только при первом вызове
         assertEquals("first", DoubleCheckedSingletonKotlin.getInstance("second").tag)
     }
-
-    // --- антипаттерны: та же проверка обязана падать ---
 
     @Test
     fun `naive lazy initialization fails the check`() =

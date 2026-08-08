@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * разрешает переупорядочить два последних шага, и другой поток на первой (неблокирующей) проверке
  * может увидеть ненулевую ссылку на ещё не достроенный объект. {@code volatile} запрещает такое
  * переупорядочивание и гарантирует видимость записанных в конструкторе полей.
+ *
+ * <p>Поле читается в локальную переменную, чтобы на быстром пути было одно чтение {@code volatile},
+ * а не два.
  */
 public final class DoubleCheckedSingletonJava {
     public static final AtomicInteger instantiationCount = new AtomicInteger();
@@ -26,7 +29,7 @@ public final class DoubleCheckedSingletonJava {
     }
 
     public static DoubleCheckedSingletonJava getInstance() {
-        DoubleCheckedSingletonJava result = instance; // локальная копия: одно чтение volatile вместо двух
+        DoubleCheckedSingletonJava result = instance;
         if (result == null) {
             synchronized (DoubleCheckedSingletonJava.class) {
                 result = instance;

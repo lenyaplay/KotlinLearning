@@ -1,6 +1,7 @@
 package org.example.prefs
 
 import android.content.SharedPreferences
+import java.util.Collections
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -78,6 +79,10 @@ fun SharedPreferences.string(
  * который запрещено изменять и чья неизменность не гарантируется, поэтому наружу отдаётся копия,
  * а в хранилище кладётся копия переданного набора.
  *
+ * Копия для чтения оборачивается в `Collections.unmodifiableSet`: `toSet()` для этого не годится —
+ * неизменяемый набор он возвращает только для размеров 0 и 1, а для двух и более элементов отдаёт
+ * обычный `LinkedHashSet`.
+ *
  * Запись `null` удаляет ключ из хранилища.
  *
  * @param key ключ в хранилище
@@ -94,7 +99,7 @@ fun SharedPreferences.stringSet(
     key = key,
     default = default,
     commit = commit,
-    read = { k, d -> getStringSet(k, d?.toMutableSet())?.toSet() },
+    read = { k, d -> getStringSet(k, d?.toMutableSet())?.let { Collections.unmodifiableSet(LinkedHashSet(it)) } },
     write = { k, v -> putStringSet(k, v?.toMutableSet()) },
 )
 

@@ -1,13 +1,15 @@
-package org.example.brackets_validator;
+package org.example.brackets;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
 public final class BracketsValidatorJava {
-    static Map<Character, Character> pairs = Map.of('(', ')', '[', ']', '{', '}');
-    static Set<Character> closers = new HashSet<>(pairs.values());
+    private static final Map<Character, Character> pairs = Map.of('(', ')', '[', ']', '{', '}');
+    private static final Set<Character> closers = Set.copyOf(pairs.values());
+
+    private BracketsValidatorJava() {
+    }
 
     /**
      * Проверяет, является ли строка корректной скобочной последовательностью.

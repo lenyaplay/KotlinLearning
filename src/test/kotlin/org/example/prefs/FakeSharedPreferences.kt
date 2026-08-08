@@ -51,8 +51,8 @@ class FakeSharedPreferences(initial: Map<String, Any> = emptyMap()) : SharedPref
         listener: SharedPreferences.OnSharedPreferenceChangeListener,
     ): Unit = TODO("не используется в тестах делегатов")
 
+    /** Накапливает изменения до `apply()`/`commit()`; `null` в [pending] означает удаление ключа. */
     private inner class FakeEditor : SharedPreferences.Editor {
-        // null означает удаление ключа — как putString(key, null) в настоящих префах
         private val pending = mutableMapOf<String, Any?>()
         private var clearRequested = false
 
