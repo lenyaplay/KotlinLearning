@@ -15,8 +15,8 @@ class StringsCombinersTest {
         assertEquals("foo", combineTwoStrings("foo", null))
         assertEquals("", combineTwoStrings(null, null))
 
-        assertEquals("ab", combineTwoStrings("a", "b")) // порядок аргументов сохраняется
-        assertEquals("foo  bar", combineTwoStrings("foo ", " bar")) // пробелы не обрезаются
+        assertEquals("ab", combineTwoStrings("a", "b"))
+        assertEquals("foo  bar", combineTwoStrings("foo ", " bar"))
     }
 
     @Test

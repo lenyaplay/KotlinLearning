@@ -11,12 +11,11 @@ class StringExtensionsTest {
         assertEquals(0, "123 !?-".vowelsCount())
 
         assertEquals(5, "aeiou".vowelsCount())
-        assertEquals(4, "Hello Kotlin!".vowelsCount()) // e, o, o, i
-        assertEquals(1, "myth".vowelsCount()) // y тоже считается гласной
+        assertEquals(4, "Hello Kotlin!".vowelsCount())
+        assertEquals(1, "myth".vowelsCount())
         assertEquals(10, "аеёиоуыэюя".vowelsCount())
-        assertEquals(3, "Привет, мир".vowelsCount()) // и, е, и
+        assertEquals(3, "Привет, мир".vowelsCount())
 
-        // регистр не важен
         assertEquals("aeiou".vowelsCount(), "AEIOU".vowelsCount())
         assertEquals("аеёиоуыэюя".vowelsCount(), "АЕЁИОУЫЭЮЯ".vowelsCount())
     }

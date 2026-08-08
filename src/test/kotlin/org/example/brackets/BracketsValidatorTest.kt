@@ -22,11 +22,11 @@ class BracketsValidatorTest {
 
     private fun loadTestCases(): List<BracketTestCase> = Json.decodeFromString(readJson())
 
+    /** Каждый кейс — отдельный динамический тест, чтобы падение одного не скрывало остальные. */
     @TestFactory
     fun `validates bracket sequences from json cases`(): List<DynamicTest> =
         implementations.flatMap { (language, isValid) ->
             testCases.map { testCase ->
-                // каждый кейс — отдельный тест, чтобы падение одного не скрывало остальные
                 dynamicTest("[$language] #${testCase.id} \"${testCase.input}\" — ${testCase.comment}") {
                     assertEquals(testCase.expected, isValid(testCase.input))
                 }

@@ -28,11 +28,13 @@ class DoubleCheckedSingletonKotlin private constructor(val tag: String) {
         private var instance: DoubleCheckedSingletonKotlin? = null
 
         /**
+         * Поле читается в локальную переменную, чтобы на быстром пути было одно чтение
+         * `@Volatile`-поля, а не два.
+         *
          * @param tag значение, с которым будет создан экземпляр при первом вызове
          * @return единственный экземпляр; при повторных вызовах [tag] игнорируется
          */
         fun getInstance(tag: String): DoubleCheckedSingletonKotlin {
-            // локальная копия: одно чтение volatile-поля вместо двух на быстром пути
             instance?.let { return it }
             return synchronized(this) {
                 instance ?: DoubleCheckedSingletonKotlin(tag).also { instance = it }

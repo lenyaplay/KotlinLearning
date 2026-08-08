@@ -32,14 +32,14 @@ private const val ITERATIONS = 100
  *
  * Проверка везде одна и та же, отличается только ожидаемый исход — поэтому она заодно доказывает, что
  * положительные тесты не проходят «сами собой».
+ *
+ * Жизненный цикл [TestInstance.Lifecycle.PER_CLASS] нужен ради общего пула потоков: при цикле по
+ * умолчанию (экземпляр на каждый тест) за прогон создавалось бы 11 × [THREADS] платформенных потоков.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SingletonTest {
-    // пул создаётся один раз на класс: при жизненном цикле по умолчанию (экземпляр на каждый тест)
-    // получалось бы 11 × THREADS платформенных потоков за прогон
     private val pool: ExecutorService = Executors.newFixedThreadPool(THREADS)
 
-    // @AfterAll, а не @AfterTest: пул общий для всех тестов класса и должен пережить их все
     @AfterAll
     fun tearDown() {
         pool.shutdown()
@@ -99,8 +99,6 @@ class SingletonTest {
         assertTrue(failures > 0, "$name: гонка не обнаружена ни разу за $ITERATIONS итераций — проверка бесполезна")
     }
 
-    // --- корректные реализации: проверка должна проходить ---
-
     @Test
     fun `java eager singleton`() =
         assertSingleInstance({ EagerSingletonJava.instantiationCount.get() }, EagerSingletonJava::getInstance)
@@ -127,10 +125,13 @@ class SingletonTest {
     fun `java enum singleton`() =
         assertSingleInstance({ EnumSingletonJava.instantiationCount().get() }, EnumSingletonJava::getInstance)
 
+    /**
+     * Экземпляр передаётся лямбдой, а не ссылкой `ObjectSingletonKotlin::getInstance`: bound callable
+     * reference компилируется в `getstatic INSTANCE` и создал бы синглтон ещё до входа в проверку,
+     * закрыв окно гонки.
+     */
     @Test
     fun `kotlin object singleton`() =
-        // лямбда, а не ObjectSingletonKotlin::getInstance: bound callable reference компилируется в
-        // getstatic INSTANCE и создал бы синглтон ещё до входа в проверку, закрыв окно гонки
         assertSingleInstance({ ObjectSingletonKotlin.instantiationCount.get() }) { ObjectSingletonKotlin.getInstance() }
 
     @Test
@@ -144,16 +145,14 @@ class SingletonTest {
             SynchronizedSingletonKotlin::getInstance,
         )
 
+    /** Заодно проверяет, что переданный параметр учитывается только при первом вызове. */
     @Test
     fun `kotlin double checked singleton`() {
         assertSingleInstance({ DoubleCheckedSingletonKotlin.instantiationCount.get() }) {
             DoubleCheckedSingletonKotlin.getInstance("first")
         }
-        // параметр учитывается только при первом вызове
         assertEquals("first", DoubleCheckedSingletonKotlin.getInstance("second").tag)
     }
-
-    // --- антипаттерны: та же проверка обязана падать ---
 
     @Test
     fun `naive lazy initialization fails the check`() =
