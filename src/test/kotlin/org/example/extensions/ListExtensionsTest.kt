@@ -19,6 +19,13 @@ class ListExtensionsTest {
     }
 
     @Test
+    fun `median of even sized list does not overflow`() {
+        assertEquals(2.147483647E9, listOf(Int.MAX_VALUE, Int.MAX_VALUE).median())
+        assertEquals(-2.147483648E9, listOf(Int.MIN_VALUE, Int.MIN_VALUE).median())
+        assertEquals(2.0E9, listOf(2_000_000_000, 2_000_000_000).median())
+    }
+
+    @Test
     fun `median sorts input without modifying it`() {
         assertEquals(2.0, listOf(3, 1, 2).median())
         assertEquals(2.5, listOf(4, 1, 3, 2).median())

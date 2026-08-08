@@ -1,4 +1,4 @@
-package org.example.brackets_validator
+package org.example.brackets
 
 class BracketsValidatorKotlin {
     companion object {

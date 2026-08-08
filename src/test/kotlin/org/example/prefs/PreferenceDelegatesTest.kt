@@ -107,16 +107,18 @@ class PreferenceDelegatesTest {
     fun `string set is defensively copied in both directions`() {
         val settings = Settings(FakeSharedPreferences())
 
-        val written = mutableSetOf("a")
+        // набор минимум из двух элементов: на одноэлементном toSet() тоже вернул бы неизменяемый
+        // набор, и проверка прошла бы независимо от реализации
+        val written = mutableSetOf("a", "b")
         settings.tags = written
-        written.add("b") // мутация после записи не должна попасть в хранилище
-        assertEquals(setOf("a"), settings.tags)
+        written.add("c") // мутация после записи не должна попасть в хранилище
+        assertEquals(setOf("a", "b"), settings.tags)
 
         // наружу отдаётся копия, причём неизменяемая: подобраться к состоянию хранилища нельзя
         @Suppress("UNCHECKED_CAST")
         val read = settings.tags as MutableSet<String>
-        assertFailsWith<UnsupportedOperationException> { read.add("c") }
-        assertEquals(setOf("a"), settings.tags)
+        assertFailsWith<UnsupportedOperationException> { read.add("d") }
+        assertEquals(setOf("a", "b"), settings.tags)
     }
 
     @Test

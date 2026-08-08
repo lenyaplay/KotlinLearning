@@ -3,7 +3,7 @@ package org.example.transformer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class ListMapperTest {
+class TransformersTest {
     @Test
     fun `kotlin mapList maps elements`() {
         assertEquals(listOf(2, 4, 6), mapList(listOf(1, 2, 3)) { x -> x * 2 })

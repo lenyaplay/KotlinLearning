@@ -1,4 +1,4 @@
-package org.example.strings_combiner;
+package org.example.strings;
 
 public final class StringsCombinersJava {
     private StringsCombinersJava() {

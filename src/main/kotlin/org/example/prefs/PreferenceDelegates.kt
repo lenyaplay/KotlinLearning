@@ -1,6 +1,7 @@
 package org.example.prefs
 
 import android.content.SharedPreferences
+import java.util.Collections
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -94,7 +95,9 @@ fun SharedPreferences.stringSet(
     key = key,
     default = default,
     commit = commit,
-    read = { k, d -> getStringSet(k, d?.toMutableSet())?.toSet() },
+    // unmodifiableSet, а не toSet(): toSet() возвращает неизменяемый набор только для размеров 0 и 1,
+    // для двух и более элементов это обычный LinkedHashSet, который вызывающий код может испортить
+    read = { k, d -> getStringSet(k, d?.toMutableSet())?.let { Collections.unmodifiableSet(LinkedHashSet(it)) } },
     write = { k, v -> putStringSet(k, v?.toMutableSet()) },
 )
 

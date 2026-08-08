@@ -1,4 +1,4 @@
-package org.example.brackets_validator
+package org.example.brackets
 
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.DynamicTest
@@ -15,7 +15,7 @@ class BracketsValidatorTest {
     private val testCases: List<BracketTestCase> by lazy { loadTestCases() }
 
     private fun readJson(): String {
-        val inputStream = this::class.java.classLoader.getResourceAsStream("brackets_validator/bracket_test_cases.json")
+        val inputStream = this::class.java.classLoader.getResourceAsStream("brackets/bracket_test_cases.json")
         val bufferedReader = inputStream?.bufferedReader()
         return bufferedReader?.use { it.readText() } ?: error("Could not read BracketTestCase file")
     }

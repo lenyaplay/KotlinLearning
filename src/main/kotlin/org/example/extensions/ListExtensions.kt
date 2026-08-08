@@ -7,6 +7,7 @@ fun List<Int>.median(): Double? {
     return if (size % 2 == 1) {
         sorted[middle].toDouble()
     } else {
-        (sorted[middle - 1] + sorted[middle]) / 2.0
+        // toLong() обязателен: сумма двух больших Int переполнилась бы до расширения до Double
+        (sorted[middle - 1].toLong() + sorted[middle]) / 2.0
     }
 }

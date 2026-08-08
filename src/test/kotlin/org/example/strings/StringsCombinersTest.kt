@@ -1,9 +1,9 @@
-package org.example.strings_combiner
+package org.example.strings
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class StringsCombinerTest {
+class StringsCombinersTest {
     @Test
     fun `kotlin combineTwoStrings concatenates strings`() {
         assertEquals("foobar", combineTwoStrings("foo", "bar"))
